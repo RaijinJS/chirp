@@ -7,9 +7,17 @@ export default authMiddleware({
   publicRoutes: ["/"]
 });
 
+// export const config = {
+//   matcher: ["/((?!.+\\.[\\w]+$|_next).*)"],
+// };
+
+// matcher was causing middleware to not be found on home page, found solution below here: https://www.answeroverflow.com/m/1099604152130220052#:~:text=can%20you%20change%20your%20matcher%20to%20this
+
+
 export const config = {
-  matcher: ["/((?!.+\\.[\\w]+$|_next).*)"],
+  matcher: ["/(.*?trpc.*?|(?!static|.*\\..*|_next|favicon.ico).*)", "/"],
 };
+
 
 // original matcher that protects all routes: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"]
 

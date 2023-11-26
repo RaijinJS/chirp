@@ -21,6 +21,8 @@ import { LoadingPage, LoadingSpinner } from "~/components/loading";
 import { useState } from "react";
 import toast from "react-hot-toast";
 
+// better solution for posting wizard is to use react hook forms and zod on client side - Because it's not ideal to rerender on every key press
+
 const CreatePostWizard = () => {
   const { user } = useUser();
 
@@ -100,10 +102,14 @@ const PostView = (props: PostWithUser) => {
       />
       <div className="flex flex-col">
         <div className="flex gap-1 text-slate-300">
-          <span>{`@${author.username}`}</span>
+          <Link href={`/@${author.username}`}>
+            <span>{`@${author.username}`}</span>
+          </Link>
+          <Link href={`/post/${post.id}`}>
           <span className="font-thin text-slate-400">{` · ${dayjs(
             post.createdAt,
           ).fromNow()}`}</span>
+          </Link>
         </div>
         <span className="text-xl">{post.content}</span>
       </div>

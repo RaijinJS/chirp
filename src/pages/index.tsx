@@ -15,10 +15,11 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { api } from "~/utils/api";
-import type { RouterOutputs } from "~/utils/api"
+import type { RouterOutputs } from "~/utils/api";
 
-import {LoadingPage} from "~/components/loading";
+import { LoadingPage, LoadingSpinner } from "~/components/loading";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 const CreatePostWizard = () => {
   const { user } = useUser();
@@ -32,7 +33,15 @@ const CreatePostWizard = () => {
       setInput("");
       // void keyword tells typescript we don't care about the error, this is just something we want happening in the background automatically
       void ctx.posts.getAll.invalidate();
-    }
+    },
+    onError: (e) => {
+      const errorMessage = e.data?.zodError?.fieldErrors.content;
+      if (errorMessage && errorMessage[0]) {
+        toast.error(errorMessage[0]);
+      } else {
+        toast.error("Failed to post! Please try again later.");
+      }
+    },
   });
 
   if (!user) return null;
@@ -53,9 +62,26 @@ const CreatePostWizard = () => {
         type="text"
         value={input}
         onChange={(e) => setInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (input !== "") {
+              mutate({ content: input });
+            }
+          }
+        }}
         disabled={isPosting}
       />
-      <button onClick={() => mutate({content: input})}>Post</button>
+      {input !== "" && !isPosting && (
+        <button onClick={() => mutate({ content: input })} disabled={isPosting}>
+          Post
+        </button>
+      )}
+      {isPosting && (
+        <div className="flex items-center justify-center">
+          <LoadingSpinner size={20} />
+        </div>
+      )}
     </div>
   );
 };
@@ -75,7 +101,9 @@ const PostView = (props: PostWithUser) => {
       <div className="flex flex-col">
         <div className="flex gap-1 text-slate-300">
           <span>{`@${author.username}`}</span>
-           <span className="font-thin text-slate-400">{` · ${dayjs(post.createdAt).fromNow()}`}</span>
+          <span className="font-thin text-slate-400">{` · ${dayjs(
+            post.createdAt,
+          ).fromNow()}`}</span>
         </div>
         <span className="text-xl">{post.content}</span>
       </div>
@@ -86,8 +114,8 @@ const PostView = (props: PostWithUser) => {
 const Feed = () => {
   const { data, isLoading: postsLoading } = api.posts.getAll.useQuery();
 
-  if (postsLoading) return <LoadingPage />
-  if (!data) return <div>Something went wrong</div>
+  if (postsLoading) return <LoadingPage />;
+  if (!data) return <div>Something went wrong</div>;
 
   return (
     <div className="flex flex-col">
@@ -96,10 +124,10 @@ const Feed = () => {
       ))}
     </div>
   );
-}
+};
 
 export default function Home() {
-  const {isLoaded: userLoaded, isSignedIn} = useUser();
+  const { isLoaded: userLoaded, isSignedIn } = useUser();
 
   // Start fetching asap. With React Query, you only have to fetch things once, as long as the things you're fetching with are the same, it can use the cached data
   // We can use that cached data in the Feed component asap, where we are calling this data below again.
@@ -126,7 +154,7 @@ export default function Home() {
             {isSignedIn && <CreatePostWizard />}
           </div>
 
-              <Feed />
+          <Feed />
         </div>
       </main>
     </>
